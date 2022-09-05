@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+    <link rel='stylesheet' type='text/css' href="css/bootstrap.min.css">
+    </head>
+<body>
+    <div id="table"></div>
+   
+
+  </div>
+</body>
+  <script src="./node_modules/fhirclient/build/fhir-client.js"></script>
+  <script src="./node_modules/jquery/dist/jquery.js"></script>
+  <script src="data.js"></script>
+<script>
+var myApp = {};
+table_string = "";
+
+indices = [0,1,5,9,16,29,34,45]  //this is illustrative
+
+function createTable(antiObj,gender_string) {
+    if (gender_string=='Female'){
+      indices = [0,1,5,9,15,28,33,43] //again this is purely illustrative
+    }
+    HTML1="<h2>Percent (%) Sensitive to an Antibiotic for a "+gender_string+" Patient</h2><h3>Number of cases in parenthesis.</h3><p><a href='javascript:void(0);' onclick='fullTable()'>Click here to view full table</a></p><table class='table table-striped table-condensed '><tr>"
+    headers = antiObj['schema']['fields'];
+    values = antiObj["rows"];
+    for(var i = 0;i<headers.length;i++) { if (indices.includes(i)) {HTML1+="<th>"+headers[i]['name']+"</th>"}}
+    HTML1+="</tr>"
+    for(let i = 0;i<10;i++){
+        HTML1+="<tr>"
+    for(let j=0;j<headers.length;j++){
+        if (indices.includes(j)) 
+        {
+        var value = values[i].f[j].v;
+        ctr_align = '<td style="text-align:center">';
+        if(j==0)
+        {
+          HTML1+="<td>"+value+"</td>"
+        }
+        else if(j==1)
+        {
+          HTML1+="<td>"+parseInt(value).toLocaleString()+"</td>"
+        }
+        else if (value=='0')
+        {
+          HTML1+=ctr_align+'---</td>';
+        }
+        else if (value=='R')
+        {
+          HTML1+=ctr_align+'Resistant</td>';
+        }
+        else if(value.split('(').length>1) 
+        {
+            val1 = value.split('(')[0];
+            val2 = value.split('(')[1];
+            para_val='('+parseInt(val2).toLocaleString()+')';
+            if (val1.includes('.'))
+            {
+              HTML1+=ctr_align+parseFloat(val1).toFixed(1).toLocaleString()+'%<br>'+para_val+'</td>';
+            }
+            else if (val1.includes('-'))
+            {
+              HTML1+=ctr_align+'---'+'</td>';
+            }
+            else
+            {
+              HTML1+=ctr_align+parseInt(val1).toLocaleString()+'%<br>'+para_val+'</td>';
+            }
+    
+        }
+        else
+        {
+            HTML1+="<td>"+value+"</td>"
+
+        }
+ 
+    }
+    }
+    HTML1+="</tr>"
+    }
+    $('#table').html(HTML1);
+}
+
+function fullTable(){
+    var x=window.open(table_string)
+}
+
+FHIR.oauth2.ready()
+    .then(function(client) { 
+       console.log(client);
+       myApp.smart = client;
+       doRequests();
+     })
+    .catch(console.error);
+
+    function defaultPatient(){
+    return {
+      fname: {value: ''},
+      lname: {value: ''},
+      gender: {value: ''},
+      birthdate: {value: ''},
+      encdt: {value:''},
+      rfv: {value:''},
+      age: {value:''}
+    };
+  }
+  
+async function doRequests(){
+
+    var patient = await myApp.smart.patient.read();
+    var gender = patient.gender;
+
+
+
+    var p = defaultPatient();
+    p.gender = gender;
+    if (p.gender=='male')
+          {
+           loadJSON("male.json").then(
+            male_obj => {
+              createTable(male_obj,"Male");
+            table_string="male_data.html";
+          });
+          }
+    else if (p.gender=='female')
+          {
+            loadJSON("female.json").then(
+            female_obj => {
+              createTable(female_obj,"Female");
+            table_string="female_data.html";
+          });
+          }
+
+
+}
+
+
+</script>
+

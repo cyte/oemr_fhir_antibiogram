@@ -1,0 +1,10 @@
+<script src="./node_modules/fhirclient/build/fhir-client.js"></script>
+<script>
+FHIR.oauth2.authorize({
+    "client_id": "", //this is your client ID provided by EMR, in our case, OpenEMR
+    "client_secret":"", //secret provided by EMR, in our case, OpenEMR
+    //technically only patient.read necessary not encounter/obs but had planned to expand
+    "scope": "launch patient/Patient.read patient/Encounter.read patient/Observation.read user/Patient.read user/Observation.read user/Encounter.read openid offline_access api:port api:oemr api:fhir site:default"
+});
+</script>
+
